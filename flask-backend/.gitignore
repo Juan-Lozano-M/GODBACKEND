@@ -1,0 +1,7 @@
+flask-backend/Firebase/clave-firebase.json
+.env
+__pycache__/
+*.py[cod]
+*.pyo
+*.sqlite3
+*.db
