@@ -17,56 +17,38 @@ def get_user_profile():
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({'status': 'error', 'message': 'No token provided'}), 401
 
-        # Decodificación del token y obtención del email
         token = auth_header.split(' ')[1]
-        
         try:
-            # Verificar el token con tolerancia de tiempo
             decoded_token = auth.verify_id_token(token, check_revoked=False)
             email = decoded_token.get('email')
             print(f"Token verified successfully for email: {email}")
-            
         except auth.InvalidIdTokenError as token_error:
-            print(f"Invalid token error: {str(token_error)}")
-            
-            # Si es un error de tiempo, intentar con un pequeño delay
             if "used too early" in str(token_error).lower():
-                print("Token timing issue detected, retrying after small delay...")
                 import time
-                time.sleep(1)  # Esperar 1 segundo
-                try:
-                    decoded_token = auth.verify_id_token(token, check_revoked=False)
-                    email = decoded_token.get('email')
-                    print(f"Token verified successfully after retry for email: {email}")
-                except Exception as retry_error:
-                    print(f"Token verification failed after retry: {str(retry_error)}")
-                    return jsonify({'status': 'error', 'message': 'Token verification failed'}), 401
+                time.sleep(1)
+                decoded_token = auth.verify_id_token(token, check_revoked=False)
+                email = decoded_token.get('email')
             else:
                 return jsonify({'status': 'error', 'message': 'Invalid token'}), 401
-                
         except Exception as firebase_error:
-            print(f"Firebase token verification error: {str(firebase_error)}")
             return jsonify({'status': 'error', 'message': 'Token verification failed'}), 401
 
-        # Búsqueda del usuario en la base de datos
-        try:
-            user = User.query.filter_by(correo_usu=email).first()
-            if not user:
-                print(f"User not found for email: {email}")
-                return jsonify({'status': 'error', 'message': 'User not found'}), 404
-                
-        except Exception as db_error:
-            print(f"Database query error: {str(db_error)}")
-            return jsonify({'status': 'error', 'message': 'Database error'}), 500
+        # Buscar usuario
+        user = User.query.filter_by(correo_usu=email).first()
+        if not user:
+            return jsonify({'status': 'error', 'message': 'User not found'}), 404
 
-        # Conversión de intereses de JSON string a lista Python
+        # Registrar última actividad
+        from datetime import datetime
+        user.ultima_actividad = datetime.utcnow()
+        db.session.commit()
+
+        # Conversión de intereses
         try:
             intereses_list = json.loads(user.intereses) if user.intereses else []
-        except Exception as json_error:
-            print(f"JSON parsing error for intereses: {str(json_error)}")
-            intereses_list = []  # Fallback a lista vacía
+        except Exception:
+            intereses_list = []
 
-        # Retorno de la información del usuario
         return jsonify({
             'status': 'success',
             'user': {
@@ -75,14 +57,16 @@ def get_user_profile():
                 'intereses': intereses_list,
                 'fecha_nacimiento': user.fecha_nacimiento.isoformat() if user.fecha_nacimiento else None,
                 'institucion': user.institucion,
-                'profile_image': user.profile_image
+                'profile_image': user.profile_image,
+                'ultima_actividad': user.ultima_actividad.isoformat() if user.ultima_actividad else None
             }
         })
 
     except Exception as e:
         print(f"Error in get_user_profile: {str(e)}")
         return jsonify({'status': 'error', 'message': 'Internal server error'}), 500
-
+    
+    
 def update_user_interests():
 
     try:

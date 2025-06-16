@@ -3,6 +3,14 @@ from datetime import datetime
 import re
 import unicodedata
 import json
+from sqlalchemy import Enum as SqlEnum
+import enum
+
+class EstadoNoticia(enum.Enum):
+    publicada = 'publicada'
+    archivada = 'archivada'
+    eliminada = 'eliminada'
+
 
 class News(db.Model):
     __tablename__ = 'noticias'
@@ -14,15 +22,18 @@ class News(db.Model):
     contenido_noticia = db.Column(db.Text, nullable=False)
     imagen_url_noticia = db.Column(db.String(500), nullable=True)
     public_id_noticia = db.Column(db.String(255), nullable=True)
-    es_publicada = db.Column(db.Boolean, default=True)
+    es_publicada = db.Column(SqlEnum(EstadoNoticia), nullable=False, default=EstadoNoticia.publicada)
     fecha_creacion = db.Column(db.TIMESTAMP, nullable=False, server_default=db.func.current_timestamp())
     fecha_actualizacion = db.Column(db.TIMESTAMP, nullable=False, server_default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    views = db.Column(db.Integer, default=0)
+    shares = db.Column(db.Integer, default=0)
     
     # Clave foránea para relacionar con el usuario (administrador)
     autor_id = db.Column(db.Integer, db.ForeignKey('usuarios.id_usu'), nullable=False)
     
     def __init__(self, titulo_noticia, categoria_noticia, contenido_noticia, autor_id, 
-                 descripcion_noticia=None, imagen_url_noticia=None, public_id_noticia=None):
+                descripcion_noticia=None, imagen_url_noticia=None, public_id_noticia=None, 
+                es_publicada=EstadoNoticia.publicada):
         self.titulo_noticia = titulo_noticia
         self.categoria_noticia = self._validate_category(categoria_noticia)
         self.contenido_noticia = contenido_noticia
@@ -30,10 +41,12 @@ class News(db.Model):
         self.descripcion_noticia = descripcion_noticia
         self.imagen_url_noticia = imagen_url_noticia
         self.public_id_noticia = public_id_noticia
+        self.es_publicada = es_publicada
+
     
     def _validate_category(self, categoria):
         """Valida que la categoría sea válida"""
-        valid_categories = ['deportes', 'tecnologia', 'politica', 'entretenimiento', 'salud', 'economia', 'educacion']
+        valid_categories = ['deportes', 'tecnologia', 'politica', 'cultura', 'salud', 'economia', 'educacion', 'ciencia']
         if categoria.lower() not in valid_categories:
             raise ValueError(f"Categoría inválida. Debe ser una de: {', '.join(valid_categories)}")
         return categoria.lower()
@@ -363,9 +376,11 @@ class News(db.Model):
             'contenido_raw': self.contenido_noticia,  # ← Contenido original
             'imagen_url': self.imagen_url_noticia,
             'public_id': self.public_id_noticia,
-            'es_publicada': self.es_publicada,
+            'es_publicada': self.es_publicada.value if self.es_publicada else None,
             'fecha_creacion': self.fecha_creacion.isoformat() if self.fecha_creacion else None,
             'fecha_actualizacion': self.fecha_actualizacion.isoformat() if self.fecha_actualizacion else None,
+            'views': self.views or 0,
+            'shares': self.shares or 0,
             'autor': {
                 'id': self.autor.id_usu,
                 'nombre': self.autor.nombre_usu,

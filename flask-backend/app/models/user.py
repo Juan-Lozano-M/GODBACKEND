@@ -19,6 +19,7 @@ class User(db.Model):
     profile_image = db.Column(db.String(255), nullable=True)
     public_id = db.Column(db.String(255), nullable=True)
     role = db.Column(db.String(10), default='User')
+    ultima_actividad = db.Column(db.DateTime, nullable=True)
     
     # Relación con noticias (un usuario puede crear muchas noticias)
     noticias_creadas = db.relationship('News', backref='autor', lazy=True)
@@ -42,5 +43,6 @@ class User(db.Model):
             'intereses': self.intereses,
             'fecha_nacimiento': self.fecha_nacimiento.isoformat() if self.fecha_nacimiento else None,
             'institucion': self.institucion,
-            'profile_image': self.profile_image
+            'profile_image': self.profile_image,
+            'ultima_actividad': self.ultima_actividad.isoformat() if self.ultima_actividad else None
         }

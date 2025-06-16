@@ -190,7 +190,8 @@ def login_user():
                     'nombre': user.nombre_usu,
                     'correo': user.correo_usu,
                     'firebase_uid': user.firebase_uid,
-                    'role': user.role or 'User'  # Default to 'User' if role is None
+                    'role': user.role or 'User',
+                    'profile_image': user.profile_image or "", # Para imagen de perfil en el primer inicio de sesión 
                 }
             })
         else:
