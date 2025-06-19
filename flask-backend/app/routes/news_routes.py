@@ -9,7 +9,10 @@ from app.controllers.news_controller import (
     get_news_by_slug,
     get_news_by_id,
     search_news,
-    update_news # <-- Importa la función que implementaremos
+    update_news,
+    share_news,
+    increment_news_views,
+    delete_news_permanently
 )
 
 # Creación del Blueprint para las rutas de noticias
@@ -22,7 +25,12 @@ news_bp.route('/api/news/get-news', methods=['GET'])(get_all_news)          # Ob
 news_bp.route('/api/news/get-all-admin', methods=['GET'])(get_all_news_admin) # Obtener todas las noticias sin filtro de estado
 news_bp.route('/api/news/search', methods=['GET'])(search_news)             # Buscar noticias
 news_bp.route('/api/news/id/<int:news_id>', methods=['GET'])(get_news_by_id) # Obtener por ID
-news_bp.route('/api/news/<slug>', methods=['GET'])(get_news_by_slug)        # Obtener por slug
+news_bp.route('/api/news/delete/<int:news_id>', methods=['DELETE'])(delete_news_permanently) # Eliminar noticia permanentemente
 news_bp.route('/api/news/update-news/<int:news_id>', methods=['PATCH', 'OPTIONS'])(update_news) # Actualizar noticia
 
-# IMPORTANTE: La ruta del slug debe ir al final para evitar conflictos
+# ✅ Nuevas rutas
+news_bp.route('/api/news/<int:news_id>/share', methods=['PATCH'])(share_news)
+news_bp.route('/api/news/<int:news_id>/view', methods=['POST'])(increment_news_views)
+
+# 🟡 IMPORTANTE: debe ir al final para evitar conflictos
+news_bp.route('/api/news/<slug>', methods=['GET'])(get_news_by_slug)        # Obtener por slug

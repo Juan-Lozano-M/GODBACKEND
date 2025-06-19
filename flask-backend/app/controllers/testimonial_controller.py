@@ -244,7 +244,9 @@ def get_testimonials_by_status():
         
         query += " ORDER BY t.fecha_publicacion_tes DESC"
         
-        result = db.session.execute(query)
+        # Usar sqlalchemy.text para consultas SQL crudas
+        from sqlalchemy import text
+        result = db.session.execute(text(query))
         testimonials = []
         
         for row in result:
@@ -425,3 +427,200 @@ def get_testimonial_by_id():
         import traceback
         traceback.print_exc()
         return jsonify({'status': 'error', 'message': 'Internal server error'}), 500
+
+
+@cross_origin(origins="http://localhost:5173")
+def create_testimonial():
+    """
+    Crea un nuevo testimonio con estado 'en espera' por defecto
+    Requiere autenticación del usuario
+    """
+    try:
+        print("=== DEBUGGING create_testimonial ===")
+        
+        # Verificación del token de autenticación
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            print("No authorization header found")
+            return jsonify({'status': 'error', 'message': 'No token provided'}), 401
+
+        # Decodificación del token
+        token = auth_header.split(' ')[1]
+        try:
+            decoded_token = auth.verify_id_token(token)
+            email = decoded_token.get('email')
+            print(f"Token verified for email: {email}")
+        except Exception as token_error:
+            print(f"Token verification failed: {str(token_error)}")
+            return jsonify({'status': 'error', 'message': 'Invalid token'}), 401
+
+        # Buscar el usuario en la base de datos
+        from app.models.user import User
+        user = User.query.filter_by(correo_usu=email.lower()).first()
+        if not user:
+            print(f"User not found for email: {email}")
+            return jsonify({'status': 'error', 'message': 'User not found'}), 404
+
+        # Obtener datos del testimonio
+        data = request.get_json()
+        print(f"Datos recibidos para nuevo testimonio: {data}")
+        
+        if not data:
+            print("No JSON data received")
+            return jsonify({'status': 'error', 'message': 'No data provided'}), 400
+        
+        # Validar campos requeridos
+        titulo = data.get('titulo_tes')
+        contenido = data.get('contenido_tes')
+        cargo = data.get('cargo_tes', '')  # Campo opcional
+        
+        print(f"Titulo: {titulo}, Contenido: {contenido}, Cargo: {cargo}")
+        
+        if not titulo or not contenido:
+            print("Missing required fields")
+            return jsonify({'status': 'error', 'message': 'Título y contenido son campos obligatorios'}), 400
+        
+        # Crear nuevo testimonio con el ID del usuario autenticado
+        nuevo_testimonio = Testimonio(
+            titulo_tes=titulo,
+            contenido_tes=contenido,
+            cargo_tes=cargo,
+            estado_tes='en espera',
+            id_usu_tes=user.id_usu  # Asignar el ID del usuario autenticado
+        )
+        
+        print(f"Creating testimonial for user ID: {user.id_usu}")
+        
+        db.session.add(nuevo_testimonio)
+        db.session.commit()
+        
+        print(f"Testimonio creado con ID: {nuevo_testimonio.id_tes}")
+        
+        return jsonify({
+            'status': 'success', 
+            'message': 'Testimonio enviado correctamente',
+            'testimonio': {
+                'id_tes': nuevo_testimonio.id_tes,
+                'titulo_tes': nuevo_testimonio.titulo_tes,
+                'contenido_tes': nuevo_testimonio.contenido_tes,
+                'cargo_tes': nuevo_testimonio.cargo_tes,
+                'estado_tes': nuevo_testimonio.estado_tes,
+                'id_usu_tes': nuevo_testimonio.id_usu_tes,
+                'nombre_usuario': user.nombre_usu
+            }
+        }), 201
+        
+    except Exception as e:
+        print(f"Error al crear testimonio: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': 'Error interno del servidor'}), 500
+
+
+# 🗑️ FUNCIÓN PARA ELIMINAR TESTIMONIO PERMANENTEMENTE
+@cross_origin(origins="http://localhost:5173")
+def delete_testimonial(testimonio_id):
+    """
+    Elimina permanentemente un testimonio de la base de datos
+    Solo permite eliminar testimonios en estado 'anulado'
+    """
+    try:
+        print(f"=== ELIMINANDO TESTIMONIO ID: {testimonio_id} ===")
+        
+        # Buscar el testimonio
+        testimonio = Testimonio.query.get(testimonio_id)
+        
+        if not testimonio:
+            return jsonify({
+                'status': 'error',
+                'message': 'Testimonio no encontrado'
+            }), 404
+        
+        # Verificar que esté en estado anulado (opcional, para mayor seguridad)
+        if testimonio.estado_tes != 'anulado':
+            return jsonify({
+                'status': 'error',
+                'message': 'Solo se pueden eliminar testimonios en estado anulado'
+            }), 400
+        
+        # Eliminar el testimonio
+        db.session.delete(testimonio)
+        db.session.commit()
+        
+        print(f"Testimonio {testimonio_id} eliminado exitosamente")
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Testimonio eliminado permanentemente'
+        }), 200
+        
+    except Exception as e:
+        print(f"Error al eliminar testimonio: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        db.session.rollback()
+        return jsonify({
+            'status': 'error',
+            'message': 'Error interno del servidor'
+        }), 500
+
+
+# 📅 FUNCIÓN PARA OBTENER TESTIMONIOS ANULADOS ANTIGUOS
+@cross_origin(origins="http://localhost:5173")
+def get_testimonials_anulados_antiguos():
+    """
+    Obtiene testimonios anulados que tienen más de X días de antigüedad
+    """
+    try:
+        # Obtener parámetro de días (por defecto 30)
+        dias = request.args.get('dias', 30, type=int)
+        
+        print(f"=== OBTENIENDO TESTIMONIOS ANULADOS ANTIGUOS ({dias} días) ===")
+        
+        # Query para obtener testimonios anulados antiguos
+        query = text("""
+            SELECT 
+                t.id_tes,
+                t.titulo_tes,
+                t.contenido_tes,
+                t.cargo_tes,
+                t.fecha_publicacion_tes,
+                u.nombre_usu,
+                DATEDIFF(CURDATE(), t.fecha_publicacion_tes) as dias_antiguedad
+            FROM testimonios t
+            INNER JOIN usuarios u ON t.id_usu_tes = u.id_usu
+            WHERE t.estado_tes = 'anulado'
+            AND DATEDIFF(CURDATE(), t.fecha_publicacion_tes) >= :dias
+            ORDER BY t.fecha_publicacion_tes ASC
+        """)
+        
+        result = db.session.execute(query, {'dias': dias})
+        testimonios_antiguos = []
+        
+        for row in result:
+            row_dict = row._asdict() if hasattr(row, '_asdict') else dict(row)
+            
+            testimonio_data = {
+                'id': row_dict['id_tes'],
+                'titulo': row_dict['titulo_tes'],
+                'contenido': row_dict['contenido_tes'],
+                'cargo': row_dict['cargo_tes'],
+                'fecha_publicacion': row_dict['fecha_publicacion_tes'].isoformat() if row_dict['fecha_publicacion_tes'] else None,
+                'nombre_usuario': row_dict['nombre_usu'],
+                'dias_antiguedad': row_dict['dias_antiguedad']
+            }
+            testimonios_antiguos.append(testimonio_data)
+        
+        print(f"Encontrados {len(testimonios_antiguos)} testimonios anulados antiguos")
+        
+        return jsonify(testimonios_antiguos), 200
+        
+    except Exception as e:
+        print(f"Error al obtener testimonios antiguos: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'status': 'error',
+            'message': 'Error interno del servidor'
+        }), 500

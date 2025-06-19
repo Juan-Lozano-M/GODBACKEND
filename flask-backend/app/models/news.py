@@ -6,6 +6,7 @@ import json
 from sqlalchemy import Enum as SqlEnum
 import enum
 
+# Enum para el estado de la noticia
 class EstadoNoticia(enum.Enum):
     publicada = 'publicada'
     archivada = 'archivada'
@@ -357,36 +358,36 @@ class News(db.Model):
     def to_dict(self):
         """Convierte el objeto a diccionario"""
         return {
-            'id': self.id_noticia,
-            'id_noticia': self.id_noticia,
-            # Nombres para el frontend
-            'title': self.titulo_noticia,
-            'category': self.categoria_noticia,
-            'description': self.descripcion_noticia,
-            'image': self.imagen_url_noticia,
-            'slug': self.generate_slug(),
-            'date': self.fecha_creacion.strftime('%d de %B de %Y') if self.fecha_creacion else None,
-            'author': self.autor.nombre_usu if self.autor else 'Autor desconocido',
-            # Nombres originales del backend
-            'titulo': self.titulo_noticia,
-            'categoria': self.categoria_noticia,
-            'descripcion': self.descripcion_noticia,
-            'contenido': self.get_plain_content(),  # ← Texto plano con formato de listas
-            'contenido_html': self.get_html_content(),  # ← HTML con formato de listas
-            'contenido_raw': self.contenido_noticia,  # ← Contenido original
-            'imagen_url': self.imagen_url_noticia,
-            'public_id': self.public_id_noticia,
-            'es_publicada': self.es_publicada.value if self.es_publicada else None,
-            'fecha_creacion': self.fecha_creacion.isoformat() if self.fecha_creacion else None,
-            'fecha_actualizacion': self.fecha_actualizacion.isoformat() if self.fecha_actualizacion else None,
-            'views': self.views or 0,
-            'shares': self.shares or 0,
-            'autor': {
-                'id': self.autor.id_usu,
-                'nombre': self.autor.nombre_usu,
-                'correo': self.autor.correo_usu
-            } if self.autor else None
-        }
+        'id': self.id_noticia,
+        'id_noticia': self.id_noticia,
+        # Nombres para el frontend
+        'title': self.titulo_noticia,
+        'category': self.categoria_noticia,
+        'description': self.descripcion_noticia,
+        'image': self.imagen_url_noticia,
+        'slug': self.generate_slug(),
+        'date': self.fecha_creacion.strftime('%d de %B de %Y') if self.fecha_creacion else None,
+        'author': self.autor.nombre_usu if self.autor else 'Autor desconocido',
+        'author_image': self.autor.profile_image if self.autor else None,  # ← Nueva línea agregada
+        # Nombres originales del backend
+        'titulo': self.titulo_noticia,
+        'categoria': self.categoria_noticia,
+        'descripcion': self.descripcion_noticia,
+        'contenido': self.get_plain_content(),
+        'contenido_html': self.get_html_content(),
+        'contenido_raw': self.contenido_noticia,
+        'imagen_url': self.imagen_url_noticia,
+        'public_id': self.public_id_noticia,
+        'es_publicada': self.es_publicada.value if self.es_publicada else None,
+        'fecha_creacion': self.fecha_creacion.isoformat() if self.fecha_creacion else None,
+        'fecha_actualizacion': self.fecha_actualizacion.isoformat() if self.fecha_actualizacion else None,
+        'autor': {
+            'id': self.autor.id_usu,
+            'nombre': self.autor.nombre_usu,
+            'correo': self.autor.correo_usu,
+            'profile_image': self.autor.profile_image  # ← Nueva línea agregada
+        } if self.autor else None
+    }
     
     def __repr__(self):
         return f'<News {self.id_noticia}: {self.titulo_noticia} - Autor: {self.autor.nombre_usu if self.autor else "Sin autor"}>'

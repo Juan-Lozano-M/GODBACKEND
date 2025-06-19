@@ -20,7 +20,7 @@ class User(db.Model):
     public_id = db.Column(db.String(255), nullable=True)
     role = db.Column(db.String(10), default='User')
     ultima_actividad = db.Column(db.DateTime, nullable=True)
-    
+
     # Relación con noticias (un usuario puede crear muchas noticias)
     noticias_creadas = db.relationship('News', backref='autor', lazy=True)
 

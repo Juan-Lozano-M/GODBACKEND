@@ -2,8 +2,9 @@ from flask import jsonify
 from app.models.news import News
 from app.models.testimonial import Testimonio
 from app.models.user import User
+from app.models.visit_stats import VisitStats
 from datetime import datetime, timedelta
-from sqlalchemy import func
+from sqlalchemy import func, extract
 from calendar import month_abbr
 from app import db
 
@@ -32,27 +33,48 @@ class StatsController:
                 func.date(User.fecha_registro_usu) == today
             ).count()
 
-            active_users_day = 25
-            active_users_week = 15
-            active_users_month = 10
+            # Obtener tráfico por mes (usuarios registrados)
+            current_year = today.year
+            registros_por_mes = (
+                db.session.query(
+                    extract('month', User.fecha_registro_usu).label('mes'),
+                    func.count(User.id_usu)
+                )
+                .filter(extract('year', User.fecha_registro_usu) == current_year)
+                .group_by('mes')
+                .order_by('mes')
+                .all()
+            )
+
+            meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+            registro_por_mes_dict = {i: 0 for i in range(1, 13)}
+
+            for mes, count in registros_por_mes:
+                registro_por_mes_dict[int(mes)] = count
 
             traffic_data = [
-                {"month": "Ene", "visits": 12000},
-                {"month": "Feb", "visits": 14000},
-                {"month": "Mar", "visits": 18000},
-                {"month": "Abr", "visits": 22000},
-                {"month": "May", "visits": 24000},
-                {"month": "Jun", "visits": 25000},
-                {"month": "Jul", "visits": 24500}
+                {"month": meses[i - 1], "visits": registro_por_mes_dict[i]}
+                for i in range(1, 13)
             ]
 
-            visit_stats = {
-                "total_visits": 130,
-                "home_visits": 45,
-                "projects_visits": 35,
-                "contact_visits": 25,
-                "visit_increase": 55
-            }
+            # Obtener visitas desde la tabla visit_stats
+            stats = VisitStats.query.get(1)
+            if stats:
+                visit_stats = {
+                    "home_visits": stats.home_visits,
+                    "projects_visits": stats.projects_visits,
+                    "contact_visits": stats.contact_visits,
+                    "news_visits": stats.news_visits,
+                    "total_visits": stats.home_visits + stats.projects_visits + stats.contact_visits + stats.news_visits
+                }
+            else:
+                visit_stats = {
+                    "home_visits": 0,
+                    "projects_visits": 0,
+                    "contact_visits": 0,
+                    "news_visits": 0,
+                    "total_visits": 0
+                }
 
             return jsonify({
                 "success": True,
@@ -62,11 +84,6 @@ class StatsController:
                         "this_month": users_this_month,
                         "this_week": users_this_week,
                         "today": users_today
-                    },
-                    "active_users": {
-                        "day": active_users_day,
-                        "week": active_users_week,
-                        "month": active_users_month
                     },
                     "traffic": traffic_data,
                     "visits": visit_stats

@@ -1,11 +1,52 @@
 from flask import request, jsonify
 import requests
 import os
+import re
 from datetime import datetime
 
 # Configuración de OpenRouter para usar DeepSeek
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
+
+# Patrones para detectar saludos simples
+SIMPLE_GREETINGS = [
+    r'^(hola|hello|hi|hey|buenas|buenos días|buenas tardes|buenas noches)$',
+    r'^(hola|hello|hi|hey)\s*[!.]*$',
+    r'^(qué tal|cómo estás|cómo está|how are you)[\s!.]*$',
+    r'^(saludos|saludo)[\s!.]*$'
+]
+
+# Respuestas rápidas para saludos
+QUICK_RESPONSES = [
+    "¡Hola! Soy Michael, tu asistente virtual especializado en orientación profesional. ¿En qué puedo ayudarte hoy? 😊",
+    "¡Hola! Me llamo Michael y estoy aquí para ayudarte con tu orientación profesional y académica. ¿Qué te gustaría saber? 🎯",
+    "¡Buenas! Soy Michael, especialista en carreras universitarias y orientación laboral. ¿Cómo puedo ayudarte? 🚀"
+]
+
+def is_simple_greeting(message):
+    """Detecta si el mensaje es un saludo simple"""
+    message_clean = message.lower().strip()
+    for pattern in SIMPLE_GREETINGS:
+        if re.match(pattern, message_clean):
+            return True
+    return False
+
+def get_quick_response():
+    """Retorna una respuesta rápida para saludos simples"""
+    import random
+    return random.choice(QUICK_RESPONSES)
+
+def clean_markdown_formatting(text):
+    """Elimina formato markdown como ** y otros símbolos de formato"""
+    # Eliminar ** para bold
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+    # Eliminar * para italic
+    text = re.sub(r'\*(.*?)\*', r'\1', text)
+    # Eliminar __ para bold
+    text = re.sub(r'__(.*?)__', r'\1', text)
+    # Eliminar _ para italic
+    text = re.sub(r'_(.*?)_', r'\1', text)
+    return text
 
 def send_message():
     """Maneja los mensajes del chatbot con DeepSeek a través de OpenRouter"""
@@ -26,35 +67,42 @@ def send_message():
                 'message': 'API key de OpenRouter no configurada'
             }), 500
         
-        # Preparar el contexto para DeepSeek
+        # Verificar si es un saludo simple para respuesta rápida
+        if is_simple_greeting(user_message):
+            return jsonify({
+                'status': 'success',
+                'message': get_quick_response(),
+                'timestamp': datetime.now().isoformat()
+            })
+        
+        # Preparar el contexto para DeepSeek con instrucciones mejoradas
         messages = [
             {
                 "role": "system",
                 "content": """Eres Michael, un asistente virtual especializado en orientación profesional y carreras universitarias. 
-                Tu objetivo es ayudar a estudiantes y profesionales jóvenes a:
+                Tu objetivo es ayudar a estudiantes y profesionales jóvenes con orientación profesional y académica.
                 
-                🎯 ESPECIALIDADES:
-                - Descubrir carreras universitarias que se adapten a sus intereses y habilidades
-                - Proporcionar información sobre tendencias laborales actuales y futuras
-                - Sugerir caminos educativos y profesionales específicos
-                - Responder dudas sobre el mundo laboral y académico
-                - Orientar sobre habilidades necesarias para diferentes profesiones
-                - Ayudar con decisiones sobre especializaciones y postgrados
+                INSTRUCCIONES CRÍTICAS:
+                - Responde de forma CONCISA y DIRECTA (máximo 200 palabras por respuesta)
+                - NO uses formato markdown como ** o __ para negrita
+                - Usa emojis moderadamente para hacer las respuestas más amigables
+                - Para preguntas complejas, da respuestas útiles pero breves
+                - Enfócate en información práctica y accionable
+                - Mantén un tono amigable pero profesional
                 
-                📋 INSTRUCCIONES:
-                - Mantén un tono amigable, profesional y motivador
-                - Proporciona respuestas útiles, específicas y actualizadas
-                - Incluye datos concretos cuando sea posible (salarios, demanda laboral, etc.)
-                - Haz preguntas de seguimiento para entender mejor las necesidades del usuario
-                - Sugiere recursos adicionales cuando sea apropiado
-                - Enfócate en el contexto latinoamericano, especialmente Colombia
+                ESPECIALIDADES:
+                - Carreras universitarias y orientación académica
+                - Tendencias laborales y oportunidades profesionales
+                - Caminos educativos y especializaciones
+                - Habilidades necesarias para diferentes profesiones
+                - Información del mercado laboral (especialmente Colombia/Latinoamérica)
                 
-                🚫 LIMITACIONES:
-                - No proporciones consejos médicos o legales específicos
-                - Si no tienes información actualizada, admítelo y sugiere dónde buscar
-                - Mantente dentro del tema de orientación profesional y educativa
-                
-                Responde de manera conversacional y estructurada cuando sea necesario."""
+                ESTILO DE RESPUESTA:
+                - Directo y útil
+                - Sin formato markdown pesado
+                - Máximo 200 palabras
+                - Incluir datos concretos cuando sea posible
+                - Hacer preguntas de seguimiento breves si es necesario"""
             }
         ]
         
@@ -71,8 +119,7 @@ def send_message():
             "role": "user",
             "content": user_message
         })
-        
-        # Llamada a OpenRouter API para usar DeepSeek
+          # Llamada a OpenRouter API para usar DeepSeek
         headers = {
             'Authorization': f'Bearer {OPENROUTER_API_KEY}',
             'Content-Type': 'application/json',
@@ -83,11 +130,10 @@ def send_message():
         payload = {
             'model': 'deepseek/deepseek-chat',  # Modelo de DeepSeek en OpenRouter
             'messages': messages,
-            'max_tokens': 800,
-            'temperature': 0.7,
-            'top_p': 0.9,
-            'stream': False
-        }
+            'max_tokens': 400,  # Reducido para respuestas más concisas
+            'temperature': 0.6,  # Reducido para respuestas más directas
+            'top_p': 0.8,  # Reducido para mejor calidad
+            'stream': False        }
         
         print(f"Enviando request a OpenRouter API: {payload}")  # Debug log
         
@@ -97,9 +143,12 @@ def send_message():
             openrouter_response = response.json()
             bot_message = openrouter_response['choices'][0]['message']['content']
             
+            # Limpiar formato markdown de la respuesta
+            bot_message_clean = clean_markdown_formatting(bot_message)
+            
             return jsonify({
                 'status': 'success',
-                'message': bot_message,
+                'message': bot_message_clean,
                 'timestamp': datetime.now().isoformat()
             })
         else:

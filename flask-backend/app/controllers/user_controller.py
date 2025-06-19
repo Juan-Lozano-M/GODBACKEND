@@ -44,6 +44,7 @@ def get_user_profile():
         db.session.commit()
 
         # Conversión de intereses
+        import json
         try:
             intereses_list = json.loads(user.intereses) if user.intereses else []
         except Exception:
@@ -65,8 +66,7 @@ def get_user_profile():
     except Exception as e:
         print(f"Error in get_user_profile: {str(e)}")
         return jsonify({'status': 'error', 'message': 'Internal server error'}), 500
-    
-    
+
 def update_user_interests():
 
     try:
@@ -319,3 +319,36 @@ def update_user_institution():
         import traceback
         traceback.print_exc()
         return jsonify({'status': 'error', 'message': 'Internal server error'}), 500
+    
+
+def get_admin_profile():
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'status': 'error', 'message': 'Token requerido'}), 401
+
+        token = auth_header.split(' ')[1]
+        
+        try:
+            decoded_token = auth.verify_id_token(token)
+        except auth.ExpiredIdTokenError:
+            return jsonify({'status': 'error', 'message': 'Token expirado. Inicia sesión nuevamente.'}), 401
+        except Exception as e:
+            return jsonify({'status': 'error', 'message': 'Token inválido'}), 401
+
+        email = decoded_token.get('email')
+        user = User.query.filter_by(correo_usu=email.lower()).first()
+
+        if not user:
+            return jsonify({'status': 'error', 'message': 'Usuario no encontrado'}), 404
+
+        return jsonify({
+            'status': 'success',
+            'name': user.nombre_usu
+        })
+
+    except Exception as e:
+        import traceback
+        print("🔥 ERROR EN get_admin_profile 🔥")
+        traceback.print_exc()
+        return jsonify({'status': 'error', 'message': 'Error interno del servidor'}), 500

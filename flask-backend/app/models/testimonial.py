@@ -15,7 +15,6 @@ class Testimonio(db.Model):
     usuario = db.relationship('User', backref=db.backref('testimonios', lazy=True))
 
     def to_dict(self):
-        # Obtener nombre del usuario si existe la relación
         nombre_usuario = "Usuario desconocido"
         try:
             if self.usuario and hasattr(self.usuario, 'nombre_usu'):

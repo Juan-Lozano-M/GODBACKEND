@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_mail import Mail
 from config import Config
 from flask_cors import CORS
 import firebase_admin
@@ -8,31 +9,30 @@ from flask_migrate import Migrate
 
 db = SQLAlchemy()
 migrate = Migrate()
+mail = Mail()
 
 
 def create_app():
     app = Flask(__name__)
+    app.config.from_object(Config)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/gameofdreams'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    
-
-    # Initialize extensions
+        # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
-
-    # Configure CORS with credentials support
+    mail.init_app(app)# Configure CORS with credentials support
     CORS(app, 
-         origins=["http://localhost:5173"],
+         origins=["http://localhost:5173", "http://127.0.0.1:5173"],
          supports_credentials=True,
          resources={
              r"/api/*": {
-                 "origins": ["http://localhost:5173"],
+                 "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],
                  "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
                  "allow_headers": ["Content-Type", "Authorization"],
                  "supports_credentials": True
              },
              r"/auth/*": {
-                 "origins": ["http://localhost:5173"],
+                 "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],
                  "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
                  "allow_headers": ["Content-Type", "Authorization"],
                  "supports_credentials": True
@@ -49,9 +49,7 @@ def create_app():
     # Test root route
     @app.route('/')
     def index():
-        return "¡Bienvenido a la API!"
-
-    # Register blueprints
+        return "¡Bienvenido a la API!"    # Register blueprints
     from app.routes.auth_routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
 
@@ -64,15 +62,22 @@ def create_app():
     from app.routes.news_routes import news_bp
     app.register_blueprint(news_bp)
     
+    from app.routes.projects_routes import projects_bp
+    app.register_blueprint(projects_bp)
+    
     from app.routes.chatbot_routes import chatbot_bp
     app.register_blueprint(chatbot_bp, url_prefix='/api/chatbot')
-
 
     from app.routes.testimonial_routes import testimonial_bp
     app.register_blueprint(testimonial_bp)
 
     from app.routes.stats_routes import stats_bp
     app.register_blueprint(stats_bp)
+
+    from app.routes.visit_routes import visit_routes
+    app.register_blueprint(visit_routes)
     
+    from app.routes.contact_routes import contact_bp
+    app.register_blueprint(contact_bp, url_prefix='/api')
 
     return app

@@ -5,15 +5,25 @@ from werkzeug.datastructures import FileStorage
 class CloudinaryService:
     @staticmethod
     def upload_image(file: FileStorage, folder: str = "uploads"):
-        try:
+        try:            # Configurar transformaciones según el tipo de contenido
+            if folder == "news_images" or "news" in folder.lower():
+                # Para noticias: dimensiones más grandes y formato panorámico
+                transformation = [
+                    {'width': 1200, 'height': 800, 'crop': 'fill'},
+                    {'quality': 'auto:good'}
+                ]
+            else:
+                # Para perfiles y otros: dimensiones cuadradas
+                transformation = [
+                    {'width': 400, 'height': 400, 'crop': 'fill'},
+                    {'quality': 'auto'}
+                ]
+            
             upload_result = cloudinary.uploader.upload(
                 file,
                 folder=folder,
                 allowed_formats=['jpg', 'png', 'jpeg'],
-                transformation=[
-                    {'width': 400, 'height': 400, 'crop': 'fill'},
-                    {'quality': 'auto'}
-                ]
+                transformation=transformation
             )
             return {
                 'status': 'success',
