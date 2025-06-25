@@ -6,6 +6,9 @@ from flask_cors import CORS
 import firebase_admin
 from firebase_admin import credentials, auth
 from flask_migrate import Migrate
+import json
+import os
+from firebase_admin import credentials
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -46,7 +49,8 @@ def create_app():
     Config.init_cloudinary()
 
     # Initialize Firebase
-    cred = credentials.Certificate('Firebase/clave-firebase.json') 
+    firebase_json = os.environ["FIREBASE_CREDENTIALS_JSON"]
+    cred = credentials.Certificate(json.loads(firebase_json))
     firebase_admin.initialize_app(cred)
 
     # Test root route
