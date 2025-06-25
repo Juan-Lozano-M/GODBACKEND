@@ -252,3 +252,29 @@ def update_email():
     except Exception as e:
         print(f"Error updating email: {str(e)}")
         return jsonify({'status': 'error', 'message': 'Error updating email'}), 500
+
+
+def check_email():
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+    
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        if not email:
+            return jsonify({'exists': False, 'message': 'Email requerido'}), 400
+        
+        user = User.query.filter_by(correo_usu=email.lower()).first()
+        if user:
+            return jsonify({'exists': True}), 200
+        else:
+            return jsonify({'exists': False}), 200
+    except Exception as e:
+        print(f"Error checking email: {str(e)}")
+        return jsonify({'exists': False, 'message': 'Error al verificar el correo'}), 500
