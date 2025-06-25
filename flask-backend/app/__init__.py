@@ -26,19 +26,31 @@ def create_app():
     migrate.init_app(app, db)
     mail.init_app(app)    # Configure CORS with credentials support
     CORS(app, 
-         origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+         origins=[
+             "http://localhost:5173", 
+             "http://127.0.0.1:5173",
+             "https://proyecto-god.netlify.app"
+         ],
          supports_credentials=True,
          methods=["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
          allow_headers=["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
          resources={
              r"/api/*": {
-                 "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],
+                 "origins": [
+                     "http://localhost:5173", 
+                     "http://127.0.0.1:5173",
+                     "https://proyecto-god.netlify.app"
+                 ],
                  "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
                  "allow_headers": ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
                  "supports_credentials": True
              },
              r"/auth/*": {
-                 "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],
+                 "origins": [
+                     "http://localhost:5173", 
+                     "http://127.0.0.1:5173",
+                     "https://proyecto-god.netlify.app"
+                 ],
                  "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
                  "allow_headers": ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
                  "supports_credentials": True

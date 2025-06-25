@@ -7,8 +7,7 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'default_secret_key')
-    # Cambiado a PyMySQL
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'mysql+pymysql://user:password@localhost/gameofdreams')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'mysql://user:password@localhost/gameofdreams')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     FIREBASE_API_KEY = os.getenv('FIREBASE_API_KEY')
     FIREBASE_AUTH_DOMAIN = os.getenv('FIREBASE_AUTH_DOMAIN')
