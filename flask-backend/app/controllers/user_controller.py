@@ -148,8 +148,7 @@ def update_user_profile():
                 'nombre_usu': user.nombre_usu,
                 'correo_usu': user.correo_usu,
                 'profile_image': user.profile_image,
-                'public_id': user.public_id,
-                'fecha_nacimiento': user.fecha_nacimiento.isoformat() if user.fecha_nacimiento else None
+                'public_id': user.public_id,                'fecha_nacimiento': user.fecha_nacimiento.isoformat() if user.fecha_nacimiento else None
             }
         })
 
@@ -157,7 +156,7 @@ def update_user_profile():
         print(f"Error updating profile: {str(e)}")
         return jsonify({'status': 'error', 'message': 'Internal server error'}), 500
 
-@cross_origin(origins="http://localhost:5173")
+@cross_origin(origins=["http://localhost:5173", "https://proyecto-god.netlify.app"])
 def update_user_email():
     try:
         # Verify Firebase token

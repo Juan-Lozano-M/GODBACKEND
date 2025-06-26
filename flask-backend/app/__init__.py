@@ -18,13 +18,13 @@ mail = Mail()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    # Cambiado a PyMySQL
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:grYnChJOVgAvvksHgFlLeYYoimUxXQRU@turntable.proxy.rlwy.net:20999/railway'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-        # Initialize extensions
+    
+    # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
-    mail.init_app(app)    # Configure CORS with credentials support
+    mail.init_app(app)
+    
+    # Configure CORS with credentials support
     CORS(app, 
          origins=[
              "http://localhost:5173", 
@@ -53,11 +53,9 @@ def create_app():
                  ],
                  "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
                  "allow_headers": ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
-                 "supports_credentials": True
-             }
+                 "supports_credentials": True             }
          })
 
-    app.config.from_object(Config)
     Config.init_cloudinary()
 
     # Initialize Firebase
@@ -68,7 +66,9 @@ def create_app():
     # Test root route
     @app.route('/')
     def index():
-        return "¡Bienvenido a la API!"    # Register blueprints
+        return "¡Bienvenido a la API!"
+    
+    # Register blueprints
     from app.routes.auth_routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
 

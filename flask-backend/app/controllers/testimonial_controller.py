@@ -9,7 +9,7 @@ from datetime import datetime
 from sqlalchemy import text
 
 
-@cross_origin(origins="http://localhost:5173")
+@cross_origin(origins=["http://localhost:5173", "https://proyecto-god.netlify.app"])
 def get_testimonials_with_user():
     """
     Obtiene testimonios aprobados con información del usuario
@@ -62,7 +62,7 @@ def get_testimonials_with_user():
         return jsonify({"status": "error", "message": "Error interno del servidor"}), 500
 
 
-@cross_origin(origins="http://localhost:5173")
+@cross_origin(origins=["http://localhost:5173", "https://proyecto-god.netlify.app"])
 def get_testimonials():
     """
     Obtiene todos los testimonios de la base de datos con información del usuario
@@ -207,7 +207,7 @@ def cambiar_estado_testimonio(testimonio_id):
         return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
 
 
-@cross_origin(origins="http://localhost:5173")
+@cross_origin(origins=["http://localhost:5173", "https://proyecto-god.netlify.app"])
 def get_testimonials_by_status():
     """
     Obtiene testimonios filtrados por estado con información del usuario
@@ -275,7 +275,7 @@ def get_testimonials_by_status():
         return jsonify({'status': 'error', 'message': 'Internal server error'}), 500
 
 
-@cross_origin(origins="http://localhost:5173")
+@cross_origin(origins=["http://localhost:5173", "https://proyecto-god.netlify.app"])
 def update_testimonial_status():
     """
     Actualiza el estado de un testimonio específico
@@ -368,7 +368,7 @@ def update_testimonial_status():
         return jsonify({'status': 'error', 'message': 'Internal server error'}), 500
 
 
-@cross_origin(origins="http://localhost:5173")
+@cross_origin(origins=["http://localhost:5173", "https://proyecto-god.netlify.app"])
 def get_testimonial_by_id():
     """
     Obtiene un testimonio específico por su ID con información del usuario
@@ -429,7 +429,7 @@ def get_testimonial_by_id():
         return jsonify({'status': 'error', 'message': 'Internal server error'}), 500
 
 
-@cross_origin(origins="http://localhost:5173")
+@cross_origin(origins=["http://localhost:5173", "https://proyecto-god.netlify.app"])
 def create_testimonial():
     """
     Crea un nuevo testimonio con estado 'en espera' por defecto
@@ -519,7 +519,7 @@ def create_testimonial():
 
 
 # 🗑️ FUNCIÓN PARA ELIMINAR TESTIMONIO PERMANENTEMENTE
-@cross_origin(origins="http://localhost:5173")
+@cross_origin(origins=["http://localhost:5173", "https://proyecto-god.netlify.app"])
 def delete_testimonial(testimonio_id):
     """
     Elimina permanentemente un testimonio de la base de datos
@@ -567,7 +567,7 @@ def delete_testimonial(testimonio_id):
 
 
 # 📅 FUNCIÓN PARA OBTENER TESTIMONIOS ANULADOS ANTIGUOS
-@cross_origin(origins="http://localhost:5173")
+@cross_origin(origins=["http://localhost:5173", "https://proyecto-god.netlify.app"])
 def get_testimonials_anulados_antiguos():
     """
     Obtiene testimonios anulados que tienen más de X días de antigüedad
