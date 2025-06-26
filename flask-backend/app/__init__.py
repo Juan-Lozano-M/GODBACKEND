@@ -19,7 +19,7 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     # Cambiado a PyMySQL
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/gameofdreams'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:grYnChJOVgAvvksHgFlLeYYoimUxXQRU@turntable.proxy.rlwy.net:20999/railway'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         # Initialize extensions
     db.init_app(app)
