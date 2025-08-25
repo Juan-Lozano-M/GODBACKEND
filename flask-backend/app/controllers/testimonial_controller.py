@@ -119,6 +119,7 @@ def get_testimonials():
         return jsonify({'status': 'error', 'message': 'Internal server error'}), 500
 
 
+@cross_origin(origins=["http://localhost:5173", "https://proyecto-god.netlify.app"])
 def get_testimonial_stats():
     """
     Obtiene estadísticas de testimonios (aprobados, rechazados, en espera)

@@ -59,9 +59,8 @@ def create_app():
     Config.init_cloudinary()
 
     # Initialize Firebase
-    firebase_json = os.environ["FIREBASE_CREDENTIALS_JSON"]
-    cred = credentials.Certificate(json.loads(firebase_json))
-    firebase_admin.initialize_app(cred)
+    firebase_path = os.environ.get("FIREBASE_SERVICE_ACCOUNT", "Firebase/clave-firebase.json")
+    cred = credentials.Certificate(firebase_path)
 
     # Test root route
     @app.route('/')
