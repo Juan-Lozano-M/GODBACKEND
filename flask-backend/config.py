@@ -5,9 +5,13 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+_database_url = os.getenv('DATABASE_URL', 'mysql+pymysql://root:grYnChJOVgAvvksHgFlLeYYoimUxXQRU@turntable.proxy.rlwy.net:20999/railway')
+if _database_url.startswith('mysql://'):
+    _database_url = _database_url.replace('mysql://', 'mysql+pymysql://', 1)
+
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'default_secret_key')
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'mysql+pymysql://root:grYnChJOVgAvvksHgFlLeYYoimUxXQRU@turntable.proxy.rlwy.net:20999/railway')
+    SQLALCHEMY_DATABASE_URI = _database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     FIREBASE_API_KEY = os.getenv('FIREBASE_API_KEY')
     FIREBASE_AUTH_DOMAIN = os.getenv('FIREBASE_AUTH_DOMAIN')
