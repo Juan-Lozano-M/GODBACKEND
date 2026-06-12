@@ -60,7 +60,9 @@ def create_app():
 
     # Initialize Firebase
     firebase_json = os.environ["FIREBASE_CREDENTIALS_JSON"]
-    cred = credentials.Certificate(json.loads(firebase_json))
+    cred_dict = json.loads(firebase_json)
+    cred_dict['private_key'] = cred_dict['private_key'].replace('\\n', '\n')
+    cred = credentials.Certificate(cred_dict)
     firebase_admin.initialize_app(cred)
 
     # Test root route
